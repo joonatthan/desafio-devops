@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
 jobs:
 
   Checkout:
@@ -18,3 +22,29 @@ jobs:
         cd app/
         npm install
         npm test
+  
+  Deploy:
+    needs: Checkout
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    
+    - name: Configurar credenciais da AWS
+      run: |
+        aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+        aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+    
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v1
+      with:
+        terraform_version: 1.6.5
+
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Terraform Plan
+      run: terraform plan
+
+    - name: Terraform Apply
+      run: terraform apply -auto-approve
